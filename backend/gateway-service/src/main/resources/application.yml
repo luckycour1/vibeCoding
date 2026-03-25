@@ -7,7 +7,8 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:8848
+        server-addr: ${SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR:nacos:8848}
+        namespace: dev
     gateway:
       discovery:
         locator:
@@ -22,4 +23,11 @@ spring:
             - StripPrefix=1
 
 jwt:
-  secret: vibecoding-secret-key-for-jwt-token-generation
+  secret: ${JWT_SECRET:vibecoding-secret-key-for-jwt-token-generation}
+
+logging:
+  file:
+    name: ${LOGGING_FILE_NAME:/logs/gateway-service.log}
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    com.vibecoding: DEBUG
