@@ -14,6 +14,8 @@ services:
     networks:
       - spring-cloud-net
     profiles: [infra]
+    volumes:
+      - /mnt/e/workApp/nacos/logs:/home/nacos/logs
 
   # Zookeeper
   zookeeper:
@@ -66,7 +68,8 @@ services:
     container_name: prometheus
     restart: unless-stopped
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./backend/prometheus.yml:/etc/prometheus/prometheus.yml
+      - /mnt/e/workApp/all-logs/prometheus:/prometheus
     ports:
       - "9090:9090"
     networks:
@@ -88,6 +91,8 @@ services:
     networks:
       - spring-cloud-net
     profiles: [infra]
+    volumes:
+      - /mnt/e/workApp/grafana:/var/lib/grafana
 
   # Loki
   loki:
@@ -100,6 +105,8 @@ services:
     networks:
       - spring-cloud-net
     profiles: [infra]
+    volumes:
+      - /mnt/e/workApp/loki:/loki
 
   # Promtail
   promtail:
@@ -107,8 +114,8 @@ services:
     container_name: promtail
     restart: always
     volumes:
-      - ./promtail-config.yml:/etc/promtail/config.yml
-      - ./logs:/var/log/spring-cloud
+      - ./backend/promtail-config.yml:/etc/promtail/config.yml
+      - /mnt/e/workApp/all-logs:/var/log/spring-cloud
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       - loki
@@ -137,7 +144,7 @@ services:
   # 网关服务
   gateway-service:
     build:
-      context: ./gateway-service
+      context: ./backend/gateway-service
       no_cache: true
     container_name: gateway-service
     ports:
@@ -147,7 +154,7 @@ services:
       - SPRING_CLOUD_NACOS_CONFIG_SERVER-ADDR=nacos:8848
       - LOGGING_FILE_NAME=/logs/gateway-service.log
     volumes:
-      - ./logs/gateway:/logs
+      - /mnt/e/workApp/all-logs/gateway:/logs
     networks:
       - spring-cloud-net
     depends_on:
@@ -157,7 +164,7 @@ services:
   # 用户服务
   user-service:
     build:
-      context: ./user-service
+      context: ./backend/user-service
       no_cache: true
     container_name: user-service
     ports:
@@ -173,7 +180,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=root
       - LOGGING_FILE_NAME=/logs/user-service.log
     volumes:
-      - ./logs/user:/logs
+      - /mnt/e/workApp/all-logs/user:/logs
     networks:
       - spring-cloud-net
     depends_on:
