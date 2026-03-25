@@ -68,7 +68,7 @@ services:
     container_name: prometheus
     restart: unless-stopped
     volumes:
-      - ./backend/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - /mnt/e/workApp/all-logs/prometheus:/prometheus
     ports:
       - "9090:9090"
@@ -114,7 +114,7 @@ services:
     container_name: promtail
     restart: always
     volumes:
-      - ./backend/promtail-config.yml:/etc/promtail/config.yml
+      - ./promtail-config.yml:/etc/promtail/config.yml
       - /mnt/e/workApp/all-logs:/var/log/spring-cloud
     command: -config.file=/etc/promtail/config.yml
     depends_on:
@@ -144,7 +144,7 @@ services:
   # 网关服务
   gateway-service:
     build:
-      context: ./backend/gateway-service
+      context: ./gateway-service
       no_cache: true
     container_name: gateway-service
     ports:
@@ -164,7 +164,7 @@ services:
   # 用户服务
   user-service:
     build:
-      context: ./backend/user-service
+      context: ./user-service
       no_cache: true
     container_name: user-service
     ports:
@@ -201,7 +201,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - spring-cloud-net
     profiles: [infra]
