@@ -1,6 +1,5 @@
 services:
   # Nacos 服务注册与配置中心
-  nacos:
     image: nacos/nacos-server:v2.3.2
     container_name: nacos
     restart: unless-stopped
@@ -177,8 +176,6 @@ services:
     networks:
       - spring-cloud-net
     profiles: [business]
-    depends_on:
-      nacos:
 
   # 用户服务
   user-service:
@@ -202,8 +199,6 @@ services:
     networks:
       - spring-cloud-net
     profiles: [business]
-    depends_on:
-      nacos:
 
 networks:
   spring-cloud-net:
