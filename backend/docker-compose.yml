@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Nacos 服务注册与配置中心
   nacos:
@@ -141,11 +139,27 @@ services:
       - spring-cloud-net
     profiles: [infra]
 
+  # MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: vibecoding
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - spring-cloud-net
+    profiles: [infra]
+
   # 网关服务
   gateway-service:
     build:
       context: ./gateway-service
-      no_cache: true
     container_name: gateway-service
     ports:
       - "8080:8080"
@@ -157,15 +171,12 @@ services:
       - /mnt/e/workApp/all-logs/gateway:/logs
     networks:
       - spring-cloud-net
-    depends_on:
-      - nacos
     profiles: [business]
 
   # 用户服务
   user-service:
     build:
       context: ./user-service
-      no_cache: true
     container_name: user-service
     ports:
       - "8081:8081"
@@ -183,28 +194,7 @@ services:
       - /mnt/e/workApp/all-logs/user:/logs
     networks:
       - spring-cloud-net
-    depends_on:
-      - nacos
-      - redis
-      - mysql
     profiles: [business]
-
-  # MySQL
-  mysql:
-    image: mysql:8.0
-    container_name: mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: vibecoding
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql-data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - spring-cloud-net
-    profiles: [infra]
 
 networks:
   spring-cloud-net:
