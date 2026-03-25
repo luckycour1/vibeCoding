@@ -179,7 +179,6 @@ services:
     profiles: [business]
     depends_on:
       nacos:
-        condition: service_healthy
 
   # 用户服务
   user-service:
@@ -205,7 +204,6 @@ services:
     profiles: [business]
     depends_on:
       nacos:
-        condition: service_healthy
 
 networks:
   spring-cloud-net:
