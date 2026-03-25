@@ -1,5 +1,6 @@
 services:
   # Nacos 服务注册与配置中心
+  nacos:
     image: nacos/nacos-server:v2.3.2
     container_name: nacos
     restart: unless-stopped
