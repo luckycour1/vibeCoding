@@ -1,0 +1,32 @@
+{
+  "name": "openclaw-react-scaffold",
+  "version": "1.0.0",
+  "description": "React 18 + TypeScript + Next.js 企业级前端脚手架",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbo -p 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "antd": "^5.20.0",
+    "@ant-design/nextjs-registry": "^1.0.1",
+    "@ant-design/icons": "^5.5.0",
+    "zustand": "^4.5.0",
+    "axios": "^1.7.0",
+    "crypto-js": "^4.2.0",
+    "dayjs": "^1.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@types/crypto-js": "^4.2.0",
+    "typescript": "^5.5.0"
+  }
+}
