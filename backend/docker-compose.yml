@@ -12,7 +12,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
     command: --default-authentication-plugin=mysql_native_password
     networks:
       - vibecoding-network
@@ -24,7 +24,7 @@ services:
 
   # Redis缓存
   redis:
-    image: redis:6.2-alpine
+    image: redis:latest
     container_name: vibecoding-redis
     ports:
       - "6379:6379"
@@ -40,7 +40,7 @@ services:
 
   # Nacos服务注册与配置中心
   nacos:
-    image: nacos/nacos-server:v2.2.3
+    image: nacos/nacos-server:v2.3.2
     container_name: vibecoding-nacos
     environment:
       MODE: standalone
@@ -61,31 +61,75 @@ services:
     volumes:
       - nacos-logs:/home/nacos/logs
 
-  # RabbitMQ消息队列
-  rabbitmq:
-    image: rabbitmq:3.11-management-alpine
-    container_name: vibecoding-rabbitmq
+  # RabbitMQ消息队列 (使用Kafka替代)
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: vibecoding-kafka
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     ports:
-      - "5672:5672"
-      - "15672:15672"
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
+      - "9092:9092"
+    depends_on:
+      - zookeeper
     networks:
       - vibecoding-network
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: vibecoding-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - vibecoding-network
+
+  # Kafka UI (可选)
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: vibecoding-kafka-ui
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    ports:
+      - "8989:8080"
+    depends_on:
+      - kafka
+      - zookeeper
+    networks:
+      - vibecoding-network
+
+  # 监控 (可选)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: vibecoding-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - vibecoding-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: vibecoding-grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - vibecoding-network
 
 volumes:
   mysql-data:
   redis-data:
   nacos-logs:
-  rabbitmq-data:
+  grafana-data:
 
 networks:
   vibecoding-network:
