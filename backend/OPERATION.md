@@ -21,30 +21,37 @@ git clone https://github.com/luckycour1/vibeCoding.git
 cd vibeCoding
 ```
 
-### 2.2 构建业务服务
+### 2.2 进入后端目录
+```bash
+cd vibeCoding/backend
+```
+
+### 2.3 构建业务服务
 ```bash
 # 构建用户服务
-cd backend/user-service
+cd user-service
 mvn clean package -DskipTests
 
-# 构建网关服务
+# 返回后端目录
 cd ../gateway-service
 mvn clean package -DskipTests
 ```
 
-### 2.3 启动所有服务
+### 2.4 启动所有服务
 ```bash
-# 启动中间件（ infra）
-docker-compose --profile infra up -d
+cd vibeCoding/backend
+
+# 启动中间件（infra）
+docker compose --profile infra up -d
 
 # 启动业务服务（business）
-docker-compose --profile business up -d
+docker compose --profile business up -d
 
 # 或者一次性启动全部
-docker-compose up -d
+docker compose up -d
 ```
 
-### 2.4 验证服务
+### 2.5 验证服务
 ```bash
 docker ps
 ```
@@ -68,42 +75,48 @@ docker ps
 
 ### 4.1 常用命令
 ```bash
+cd vibeCoding/backend
+
 # 启动服务
-docker-compose up -d
+docker compose up -d
 
 # 停止服务
-docker-compose down
+docker compose down
 
 # 查看日志
-docker-compose logs -f [服务名]
+docker compose logs -f [服务名]
 
 # 重启服务
-docker-compose restart [服务名]
+docker compose restart [服务名]
 
 # 查看服务状态
-docker-compose ps
+docker compose ps
 ```
 
 ### 4.2 分环境启动
 ```bash
+cd vibeCoding/backend
+
 # 只启动中间件
-docker-compose --profile infra up -d
+docker compose --profile infra up -d
 
 # 只启动业务服务
-docker-compose --profile business up -d
+docker compose --profile business up -d
 
 # 停止中间件
-docker-compose --profile infra down
+docker compose --profile infra down
 
 # 停止业务服务
-docker-compose --profile business down
+docker compose --profile business down
 ```
 
 ### 4.3 重新构建
 ```bash
+cd vibeCoding/backend
+
 # 重新构建并启动
-docker-compose build --no-cache [服务名]
-docker-compose up -d [服务名]
+docker compose build [服务名]
+docker compose up -d [服务名]
 ```
 
 ## 5. 服务日志
@@ -150,7 +163,7 @@ tail -f /mnt/e/workApp/all-logs/gateway/gateway-service.log
 ## 7. 数据库
 
 ### 7.1 连接信息
-- Host: localhost
+- Host: mysql
 - Port: 3306
 - Database: vibecoding
 - Username: root
@@ -183,34 +196,36 @@ SELECT * FROM vibecoding.sys_permission;
 netstat -tlnp | grep [端口号]
 
 # 停止占用端口的容器
-docker-compose stop [服务名]
+docker compose stop [服务名]
 ```
 
 ### 8.2 容器无法启动
 ```bash
 # 查看容器日志
-docker-compose logs [服务名]
+docker compose logs [服务名]
 
 # 检查配置
-docker-compose config
+docker compose config
 ```
 
 ### 8.3 Nacos 无法启动
 ```bash
 # 检查 MySQL 是否就绪
-docker-compose logs mysql
+docker compose logs mysql
 
 # 等待 MySQL 启动完成后再启动 Nacos
-docker-compose up -d nacos
+docker compose up -d nacos
 ```
 
 ### 8.4 清理环境
 ```bash
+cd vibeCoding/backend
+
 # 停止并删除所有容器
-docker-compose down
+docker compose down
 
 # 删除卷（数据会被清除）
-docker-compose down -v
+docker compose down -v
 
 # 删除未使用的镜像
 docker image prune -a
@@ -284,18 +299,27 @@ docker exec redis redis-cli SAVE
 docker cp redis:/data/dump.rdb ./backup.rdb
 ```
 
-## 11. 扩展
+## 11. 项目结构
 
-### 11.1 增加服务
-1. 在 `./backend/` 下创建新的微服务模块
-2. 添加 Dockerfile
-3. 在 `docker-compose.yml` 中添加服务配置
-4. 在网关配置中添加路由
-
-### 11.2 集群部署
-- 使用 Docker Swarm 或 Kubernetes
-- 配置 Nginx 负载均衡
-- 使用外部数据库集群
+```
+vibeCoding/
+├── backend/
+│   ├── docker-compose.yml      # Docker 部署配置
+│   ├── init.sql               # 数据库初始化
+│   ├── prometheus.yml          # Prometheus 配置
+│   ├── promtail-config.yml    # Promtail 配置
+│   ├── OPERATION.md            # 运维手册
+│   ├── user-service/           # 用户服务
+│   │   ├── Dockerfile
+│   │   ├── pom.xml
+│   │   └── src/
+│   └── gateway-service/        # 网关服务
+│       ├── Dockerfile
+│       ├── pom.xml
+│       └── src/
+│
+└── frontend/                   # 前端项目
+```
 
 ---
 
