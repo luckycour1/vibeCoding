@@ -2,10 +2,21 @@ server:
   port: 8081
 
 spring:
-  config:
-    import: optional:nacos:${spring.application.name}.yaml
   application:
     name: user-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: ""
+        group: DEFAULT_GROUP
+      config:
+        server-addr: localhost:8848
+        file-extension: yaml
+        group: DEFAULT_GROUP
+        namespace: ""
+  config:
+    import: nacos:application.yaml
   datasource:
     url: jdbc:mysql://localhost:3306/vibecoding?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
@@ -37,25 +48,21 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
-  cloud:
-    nacos:
-      discovery:
-        server-addr: localhost:8848
-        namespace: ""
-        group: DEFAULT_GROUP
-      config:
-        server-addr: localhost:8848
-        file-extension: yaml
-        group: DEFAULT_GROUP
-        namespace: ""
 
 jwt:
   secret: vibecoding-secret-key-for-jwt-token-generation
   expiration: 7200000
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
 logging:
-  file:
-    name: /logs/user-service.log
   level:
     com.vibecoding: DEBUG
     org.springframework.cloud: INFO

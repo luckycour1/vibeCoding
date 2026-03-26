@@ -2,8 +2,6 @@ server:
   port: 8080
 
 spring:
-  config:
-    import: optional:nacos:${spring.application.name}.yaml
   application:
     name: gateway-service
   cloud:
@@ -17,25 +15,43 @@ spring:
         file-extension: yaml
         group: DEFAULT_GROUP
         namespace: ""
+    # ========== gateway配置在cloud节点内 ==========
     gateway:
       discovery:
         locator:
-          enabled: true
-          lower-case-service-id: true
+          enabled: false
       routes:
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/api/user/**
-          filters:
-            - StripPrefix=1
+            - Path=/users/**
+            - Method=GET,POST,PUT,DELETE
+  config:
+    import: nacos:application.yaml
 
-jwt:
-  secret: vibecoding-secret-key-for-jwt-token-generation
+auth:
+  ignore-urls:
+    - /auth/login
+    - /auth/register
+    - /actuator/**
+    - /v3/api-docs/**
+    - /swagger-ui/**
+    - /swagger-ui.html
+    - /webjars/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    gateway:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
 
 logging:
-  file:
-    name: /logs/gateway-service.log
   level:
     org.springframework.cloud.gateway: DEBUG
     com.vibecoding: DEBUG
