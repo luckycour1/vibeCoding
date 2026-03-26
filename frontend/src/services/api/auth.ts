@@ -1,125 +1,98 @@
 import request from '../request';
-import { LoginParams, LoginResult, ApiResponse, UserInfo, TokenData } from '@/types';
+import { LoginParams, LoginResult, UserInfo } from '@/types';
 
 /**
- * 登录 API - 对接后端
+ * 登录 API
  */
 export const authApi = {
   /**
    * 用户登录
+   * POST /api/user/login
    */
   login: (params: LoginParams): Promise<LoginResult> => {
     return request.post('/user/login', params);
-  },
-
-  /**
-   * 用户登出
-   */
-  logout: (): Promise<void> => {
-    return request.post('/user/logout');
-  },
-
-  /**
-   * 获取当前用户信息
-   */
-  getUserInfo: (): Promise<UserInfo> => {
-    return request.get('/user/info');
-  },
-
-  /**
-   * 修改密码
-   */
-  changePassword: (data: {
-    oldPassword: string;
-    newPassword: string;
-  }): Promise<void> => {
-    return request.post('/user/password', data);
   }
 };
 
 /**
  * 用户管理 API
+ * 基础路径: /api/user
  */
 export const userApi = {
   /**
    * 获取用户列表
+   * GET /api/user/list
    */
   list: () => {
     return request.get('/user/list');
   },
 
   /**
-   * 添加用户
+   * 获取用户详情
+   * GET /api/user/{id}
    */
-  add: (data: any) => {
+  getById: (id: number) => {
+    return request.get(`/user/${id}`);
+  },
+
+  /**
+   * 创建用户
+   * POST /api/user/add
+   */
+  add: (data: {
+    username: string;
+    password: string;
+    nickname?: string;
+    email?: string;
+    phone?: string;
+    department?: string;
+    position?: string;
+    status?: number;
+  }) => {
     return request.post('/user/add', data);
   },
 
   /**
    * 更新用户
+   * PUT /api/user/update/{id}
    */
-  update: (id: number, data: any) => {
+  update: (id: number, data: {
+    nickname?: string;
+    email?: string;
+    phone?: string;
+    department?: string;
+    position?: string;
+    status?: number;
+  }) => {
     return request.put(`/user/update/${id}`, data);
   },
 
   /**
    * 删除用户
+   * DELETE /api/user/delete/{id}
    */
   delete: (id: number) => {
     return request.delete(`/user/delete/${id}`);
-  },
-
-  /**
-   * 获取用户详情
-   */
-  getById: (id: number) => {
-    return request.get(`/user/${id}`);
   }
 };
 
 /**
- * 角色管理 API
+ * 角色管理 API (预留)
  */
 export const roleApi = {
-  /**
-   * 获取角色列表
-   */
   list: () => {
     return request.get('/role/list');
   },
 
-  /**
-   * 添加角色
-   */
   add: (data: any) => {
     return request.post('/role/add', data);
   },
 
-  /**
-   * 更新角色
-   */
   update: (id: number, data: any) => {
     return request.put(`/role/update/${id}`, data);
   },
 
-  /**
-   * 删除角色
-   */
   delete: (id: number) => {
     return request.delete(`/role/delete/${id}`);
-  },
-
-  /**
-   * 获取角色权限
-   */
-  getPermissions: (id: number) => {
-    return request.get(`/role/permission/${id}`);
-  },
-
-  /**
-   * 设置角色权限
-   */
-  setPermissions: (id: number, permissions: string[]) => {
-    return request.post(`/role/permission/${id}`, { permissions });
   }
 };
