@@ -30,7 +30,7 @@ public class PageResult<T> extends Result<List<T>> {
         return result;
     }
 
-    public static <T> PageResult<T> error(String message) {
+    public static <T> PageResult<T> errorPage(String message) {
         PageResult<T> result = new PageResult<>();
         result.setCode(500);
         result.setMessage(message);
@@ -38,7 +38,7 @@ public class PageResult<T> extends Result<List<T>> {
         return result;
     }
 
-    public static <T> PageResult<T> error(int code, String message) {
+    public static <T> PageResult<T> errorPage(int code, String message) {
         PageResult<T> result = new PageResult<>();
         result.setCode(code);
         result.setMessage(message);
