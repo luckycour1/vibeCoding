@@ -1,14 +1,16 @@
 package com.vibecoding.userservice.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.vibecoding.comm.common.BusinessException;
+import com.vibecoding.comm.dto.Result;
+import com.vibecoding.comm.security.JwtTokenProvider;
 import com.vibecoding.userservice.dto.LoginRequest;
 import com.vibecoding.userservice.dto.LoginResponse;
 import com.vibecoding.userservice.entity.User;
 import com.vibecoding.userservice.mapper.UserMapper;
-import com.vibecoding.userservice.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
@@ -20,20 +22,20 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
-    public LoginResponse login(LoginRequest request) {
+    public Result<LoginResponse> login(LoginRequest request) {
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
                 .eq(User::getUsername, request.getUsername()));
 
         if (user == null) {
-            throw new RuntimeException("用户名或密码错误");
+            throw new BusinessException(401, "用户名或密码错误");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("用户名或密码错误");
+            throw new BusinessException(401, "用户名或密码错误");
         }
 
         if (user.getStatus() == 0) {
-            throw new RuntimeException("账号已被禁用");
+            throw new BusinessException(401, "账号已被禁用");
         }
 
         String token = jwtTokenProvider.generateToken(user.getUsername());
@@ -49,7 +51,7 @@ public class UserService {
         userInfo.setRoles(new String[]{"admin"});
         response.setUser(userInfo);
 
-        return response;
+        return Result.success(response);
     }
 
     public List<User> findAll() {
@@ -59,7 +61,7 @@ public class UserService {
     public User save(User user) {
         if (userMapper.selectCount(new LambdaQueryWrapper<User>()
                 .eq(User::getUsername, user.getUsername())) > 0) {
-            throw new RuntimeException("用户名已存在");
+            throw new BusinessException("用户名已存在");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userMapper.insert(user);
@@ -69,7 +71,7 @@ public class UserService {
     public User update(Long id, User user) {
         User existingUser = userMapper.selectById(id);
         if (existingUser == null) {
-            throw new RuntimeException("用户不存在");
+            throw new BusinessException("用户不存在");
         }
         
         existingUser.setNickname(user.getNickname());
@@ -90,7 +92,7 @@ public class UserService {
     public User findById(Long id) {
         User user = userMapper.selectById(id);
         if (user == null) {
-            throw new RuntimeException("用户不存在");
+            throw new BusinessException("用户不存在");
         }
         return user;
     }

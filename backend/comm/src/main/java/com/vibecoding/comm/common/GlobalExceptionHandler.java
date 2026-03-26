@@ -1,6 +1,6 @@
-package com.vibecoding.userservice.common;
+package com.vibecoding.comm.common;
 
-import org.springframework.http.HttpStatus;
+import com.vibecoding.comm.dto.Result;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -12,7 +12,6 @@ import java.util.Map;
 
 /**
  * 全局异常处理器
- * HTTP 状态码始终返回 200，通过 code 字段表示业务状态
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -26,17 +25,11 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理业务异常 (RuntimeException)
+     * 处理运行时异常
      */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Result<Object>> handleRuntimeException(RuntimeException e) {
-        String message = e.getMessage();
-        
-        if (message != null && (message.contains("用户名或密码错误") || message.contains("账号已被禁用"))) {
-            return ResponseEntity.ok(Result.error(401, message));
-        }
-        
-        return ResponseEntity.ok(Result.error(400, message));
+        return ResponseEntity.ok(Result.error(400, e.getMessage()));
     }
 
     /**
@@ -53,7 +46,6 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
         
-        // 合并错误信息
         String msg = String.join("; ", errors.values());
         return ResponseEntity.ok(Result.error(400, msg));
     }

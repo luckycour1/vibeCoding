@@ -1,4 +1,4 @@
-package com.vibecoding.userservice.security;
+package com.vibecoding.comm.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -9,6 +9,9 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+/**
+ * JWT 令牌提供者
+ */
 @Component
 public class JwtTokenProvider {
 

@@ -1,6 +1,6 @@
 package com.vibecoding.userservice.controller;
 
-import com.vibecoding.userservice.common.Result;
+import com.vibecoding.comm.dto.Result;
 import com.vibecoding.userservice.dto.LoginRequest;
 import com.vibecoding.userservice.dto.LoginResponse;
 import com.vibecoding.userservice.entity.User;
@@ -15,15 +15,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class UserController {
 
     private final UserService userService;
 
     @PostMapping("/login")
     public ResponseEntity<Result<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
-        LoginResponse response = userService.login(request);
-        return ResponseEntity.ok(Result.success(response));
+        return ResponseEntity.ok(userService.login(request));
     }
 
     @GetMapping("/list")

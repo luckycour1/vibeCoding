@@ -3,13 +3,14 @@ package com.vibecoding.userservice.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.vibecoding.comm.entity.BaseEntity;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
 @TableName("sys_role")
-public class Role {
+public class Role extends BaseEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
 
@@ -17,6 +18,4 @@ public class Role {
     private String code;
     private String description;
     private Integer status;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

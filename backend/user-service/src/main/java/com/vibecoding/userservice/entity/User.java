@@ -1,15 +1,16 @@
 package com.vibecoding.userservice.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.vibecoding.comm.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
-import java.time.LocalDateTime;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
 @TableName("sys_user")
-public class User {
+public class User extends BaseEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
 
@@ -21,10 +22,4 @@ public class User {
     private String department;
     private String position;
     private Integer status;
-
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createdAt;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedAt;
 }

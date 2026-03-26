@@ -1,4 +1,4 @@
-package com.vibecoding.userservice.common;
+package com.vibecoding.comm.common;
 
 /**
  * 自定义业务异常

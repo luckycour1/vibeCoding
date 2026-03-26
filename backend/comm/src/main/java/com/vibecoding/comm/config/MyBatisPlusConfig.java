@@ -1,4 +1,4 @@
-package com.vibecoding.userservice.config;
+package com.vibecoding.comm.config;
 
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
@@ -10,6 +10,9 @@ import org.springframework.context.annotation.Configuration;
 
 import java.time.LocalDateTime;
 
+/**
+ * MyBatis-Plus 配置
+ */
 @Configuration
 public class MyBatisPlusConfig implements MetaObjectHandler {
 

@@ -3,13 +3,12 @@ package com.vibecoding.userservice.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.vibecoding.comm.entity.BaseEntity;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 @Data
 @TableName("sys_permission")
-public class Permission {
+public class Permission extends BaseEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
 
@@ -19,6 +18,4 @@ public class Permission {
     private String path;
     private String icon;
     private Long parentId;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

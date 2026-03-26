@@ -1,4 +1,4 @@
-package com.vibecoding.userservice.common;
+package com.vibecoding.comm.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -30,17 +30,5 @@ public class Result<T> {
     
     public static <T> Result<T> error(int code, String message) {
         return new Result<>(code, message, null);
-    }
-    
-    public static <T> Result<T> unauthorized(String message) {
-        return new Result<>(401, message, null);
-    }
-    
-    public static <T> Result<T> forbidden(String message) {
-        return new Result<>(403, message, null);
-    }
-    
-    public static <T> Result<T> notFound(String message) {
-        return new Result<>(404, message, null);
     }
 }
