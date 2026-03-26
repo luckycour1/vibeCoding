@@ -107,7 +107,7 @@ request.interceptors.response.use(
 
     // 业务成功 (code = 200)
     if (res.code === RESPONSE_CODE.SUCCESS) {
-      return res;
+      return res.data;
     }
 
     // 业务失败 - 显示错误消息
