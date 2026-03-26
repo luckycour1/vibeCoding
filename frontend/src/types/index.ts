@@ -1,14 +1,14 @@
 // ==================== 用户相关类型 ====================
 
 export interface UserInfo {
-  userId: string;
+  userId: number | string;
   username: string;
   nickname?: string;
   avatar?: string;
   email?: string;
   phone?: string;
   roles: string[];
-  permissions: PermissionItem[];
+  permissions?: PermissionItem[];
 }
 
 export interface PermissionItem {
@@ -24,9 +24,9 @@ export interface PermissionItem {
 
 export interface TokenData {
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string;
   expiresIn: number;
-  tokenType: string;
+  tokenType?: string;
 }
 
 // ==================== 登录相关类型 ====================
@@ -38,10 +38,16 @@ export interface LoginParams {
   remember?: boolean;
 }
 
-export interface LoginResult {
+// 后端登录响应
+export interface LoginResponse {
+  token: string;
+  tokenType?: string;
+  expiresIn?: number;
   user: UserInfo;
-  token: TokenData;
 }
+
+// 前端使用
+export interface LoginResult extends LoginResponse {}
 
 // ==================== API 响应类型 ====================
 
@@ -49,7 +55,7 @@ export interface ApiResponse<T = unknown> {
   code: number;
   data: T;
   message: string;
-  success: boolean;
+  success?: boolean;
 }
 
 export interface PageParams {

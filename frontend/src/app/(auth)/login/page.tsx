@@ -9,6 +9,7 @@ import { usePermissionStore } from '@/store/permissionStore';
 import { STORAGE_KEYS } from '@/config';
 import { storage } from '@/utils/storage';
 import { authApi } from '@/services/api/auth';
+import { LoginResult } from '@/types';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,8 +21,8 @@ export default function LoginPage() {
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
-      // 调用真实后端API
-      const result = await authApi.login({
+      // 调用后端API
+      const result: LoginResult = await authApi.login({
         username: values.username,
         password: values.password
       });
@@ -34,9 +35,9 @@ export default function LoginPage() {
         roles: result.user?.roles || ['admin']
       });
 
-      // 保存Token
+      // 保存Token (后端返回 token 是字符串)
       setTokens({
-        accessToken: result.token,
+        token: result.token,
         refreshToken: '',
         expiresIn: result.expiresIn || 7200,
         tokenType: result.tokenType || 'Bearer'
@@ -52,7 +53,7 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (error: any) {
       console.error('登录失败:', error);
-      message.error(error.message || '登录失败，请检查用户名和密码');
+      // 错误信息已在拦截器中显示
     } finally {
       setLoading(false);
     }
