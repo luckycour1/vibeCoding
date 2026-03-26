@@ -1,5 +1,6 @@
 package com.vibecoding.userservice.controller;
 
+import com.vibecoding.userservice.common.Result;
 import com.vibecoding.userservice.dto.LoginRequest;
 import com.vibecoding.userservice.dto.LoginResponse;
 import com.vibecoding.userservice.entity.User;
@@ -14,38 +15,40 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class UserController {
 
     private final UserService userService;
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(userService.login(request));
+    public ResponseEntity<Result<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = userService.login(request);
+        return ResponseEntity.ok(Result.success(response));
     }
 
     @GetMapping("/list")
-    public ResponseEntity<List<User>> list() {
-        return ResponseEntity.ok(userService.findAll());
+    public ResponseEntity<Result<List<User>>> list() {
+        return ResponseEntity.ok(Result.success(userService.findAll()));
     }
 
     @PostMapping("/add")
-    public ResponseEntity<User> add(@RequestBody User user) {
-        return ResponseEntity.ok(userService.save(user));
+    public ResponseEntity<Result<User>> add(@RequestBody User user) {
+        return ResponseEntity.ok(Result.success(userService.save(user)));
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User user) {
-        return ResponseEntity.ok(userService.update(id, user));
+    public ResponseEntity<Result<User>> update(@PathVariable Long id, @RequestBody User user) {
+        return ResponseEntity.ok(Result.success(userService.update(id, user)));
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Result<Void>> delete(@PathVariable Long id) {
         userService.delete(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(Result.success("删除成功", null));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.findById(id));
+    public ResponseEntity<Result<User>> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(Result.success(userService.findById(id)));
     }
 }

@@ -5,39 +5,20 @@ spring:
   application:
     name: gateway-service
   cloud:
-    nacos:
-      discovery:
-        server-addr: localhost:8848
-        namespace: ""
-        group: DEFAULT_GROUP
-      config:
-        server-addr: localhost:8848
-        file-extension: yaml
-        group: DEFAULT_GROUP
-        namespace: ""
-    # ========== gateway配置在cloud节点内 ==========
+    # ========== gateway配置 ==========
     gateway:
       discovery:
         locator:
           enabled: false
       routes:
         - id: user-service
-          uri: lb://user-service
+          uri: http://localhost:8081
           predicates:
-            - Path=/users/**
-            - Method=GET,POST,PUT,DELETE
-  config:
-    import: optional:nacos:application.yaml
+            - Path=/api/user/**
+          filters:
+            - StripPrefix=0
 
-auth:
-  ignore-urls:
-    - /auth/login
-    - /auth/register
-    - /actuator/**
-    - /v3/api-docs/**
-    - /swagger-ui/**
-    - /swagger-ui.html
-    - /webjars/**
+# CORS配置已在CorsConfig.java中配置
 
 management:
   endpoints:
