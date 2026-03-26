@@ -4,7 +4,8 @@
   "description": "React 18 + TypeScript + Next.js 企业级前端脚手架",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbo -p 3000",
+    "dev": "next dev --turbo -p 3001",
+    "dev:win": "set NEXT_IGNORE_INCORRECT_LOCKFILE=1&& next dev --turbo -p 3001",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
