@@ -1,29 +1,32 @@
 package com.vibecoding.userservice.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.vibecoding.userservice.dto.LoginRequest;
 import com.vibecoding.userservice.dto.LoginResponse;
 import com.vibecoding.userservice.entity.User;
-import com.vibecoding.userservice.repository.UserRepository;
+import com.vibecoding.userservice.mapper.UserMapper;
 import com.vibecoding.userservice.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
-    private final UserRepository userRepository;
+    private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
     public LoginResponse login(LoginRequest request) {
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("用户名或密码错误"));
+        User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                .eq(User::getUsername, request.getUsername()));
+
+        if (user == null) {
+            throw new RuntimeException("用户名或密码错误");
+        }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("用户名或密码错误");
@@ -50,20 +53,24 @@ public class UserService {
     }
 
     public List<User> findAll() {
-        return userRepository.findAll();
+        return userMapper.selectList(null);
     }
 
     public User save(User user) {
-        if (userRepository.existsByUsername(user.getUsername())) {
+        if (userMapper.selectCount(new LambdaQueryWrapper<User>()
+                .eq(User::getUsername, user.getUsername())) > 0) {
             throw new RuntimeException("用户名已存在");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+        userMapper.insert(user);
+        return user;
     }
 
     public User update(Long id, User user) {
-        User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        User existingUser = userMapper.selectById(id);
+        if (existingUser == null) {
+            throw new RuntimeException("用户不存在");
+        }
         
         existingUser.setNickname(user.getNickname());
         existingUser.setEmail(user.getEmail());
@@ -72,15 +79,19 @@ public class UserService {
         existingUser.setPosition(user.getPosition());
         existingUser.setStatus(user.getStatus());
         
-        return userRepository.save(existingUser);
+        userMapper.updateById(existingUser);
+        return existingUser;
     }
 
     public void delete(Long id) {
-        userRepository.deleteById(id);
+        userMapper.deleteById(id);
     }
 
     public User findById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        User user = userMapper.selectById(id);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        return user;
     }
 }

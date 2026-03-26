@@ -1,55 +1,30 @@
 package com.vibecoding.userservice.entity;
 
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
-import javax.persistence.*;
+import lombok.EqualsAndHashCode;
+
 import java.time.LocalDateTime;
 
 @Data
-@Entity
-@Table(name = "sys_user")
+@EqualsAndHashCode(callSuper = false)
+@TableName("sys_user")
 public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @TableId(type = IdType.AUTO)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 50)
     private String username;
-
-    @Column(nullable = false)
     private String password;
-
-    @Column(length = 50)
     private String nickname;
-
-    @Column(length = 100)
     private String email;
-
-    @Column(length = 20)
     private String phone;
-
-    @Column(length = 50)
     private String department;
-
-    @Column(length = 50)
     private String position;
+    private Integer status;
 
-    @Column(nullable = false)
-    private Integer status = 1;
-
-    @Column(name = "created_at")
+    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }
