@@ -7,9 +7,9 @@ spring:
   application:
     name: user-service
   datasource:
-    url: jdbc:mysql://${SPRING_DATASOURCE_URL:mysql:3306/vibecoding}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: ${SPRING_DATASOURCE_USERNAME:root}
-    password: ${SPRING_DATASOURCE_PASSWORD:root}
+    url: jdbc:mysql://mysql:3306/vibecoding?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 20
@@ -24,11 +24,11 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.MySQL8Dialect
   redis:
-    host: ${SPRING_REDIS_HOST:redis}
-    port: ${SPRING_REDIS_PORT:6379}
-    password: ${SPRING_REDIS_PASSWORD:}
+    host: redis
+    port: 6379
+    password: 
   kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP-SERVERS:kafka:29092}
+    bootstrap-servers: kafka:29092
     consumer:
       group-id: user-service-group
       auto-offset-reset: earliest
@@ -40,19 +40,19 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: ${SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR:nacos:8848}
+        server-addr: nacos:8848
         namespace: dev
       config:
-        server-addr: ${SPRING_CLOUD_NACOS_CONFIG_SERVER-ADDR:nacos:8848}
+        server-addr: nacos:8848
         file-extension: yaml
 
 jwt:
-  secret: ${JWT_SECRET:vibecoding-secret-key-for-jwt-token-generation}
-  expiration: ${JWT_EXPIRATION:7200000}
+  secret: vibecoding-secret-key-for-jwt-token-generation
+  expiration: 7200000
 
 logging:
   file:
-    name: ${LOGGING_FILE_NAME:/logs/user-service.log}
+    name: /logs/user-service.log
   level:
     com.vibecoding: DEBUG
     org.springframework.cloud: INFO

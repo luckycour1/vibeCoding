@@ -168,10 +168,6 @@ services:
     container_name: gateway-service
     ports:
       - "8080:8080"
-    environment:
-      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR=nacos:8848
-      - SPRING_CLOUD_NACOS_CONFIG_SERVER-ADDR=nacos:8848
-      - LOGGING_FILE_NAME=/logs/gateway-service.log
     volumes:
       - /mnt/e/workApp/all-logs/gateway:/logs
     networks:
@@ -185,16 +181,6 @@ services:
     container_name: user-service
     ports:
       - "8081:8081"
-    environment:
-      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR=nacos:8848
-      - SPRING_CLOUD_NACOS_CONFIG_SERVER-ADDR=nacos:8848
-      - SPRING_KAFKA_BOOTSTRAP-SERVERS=kafka:29092
-      - SPRING_REDIS_HOST=redis
-      - SPRING_REDIS_PORT=6379
-      - SPRING_DATASOURCE_URL=mysql:3306/vibecoding
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
-      - LOGGING_FILE_NAME=/logs/user-service.log
     volumes:
       - /mnt/e/workApp/all-logs/user:/logs
     networks:
