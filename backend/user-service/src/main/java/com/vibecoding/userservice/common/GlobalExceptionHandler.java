@@ -51,12 +51,13 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理其他异常
+     * 处理其他异常 - 只返回通用错误提示，不暴露技术细节
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Result<Object>> handleException(Exception e) {
         e.printStackTrace();
+        // 只返回通用提示，不暴露内部错误信息
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Result.error("服务器内部错误: " + e.getMessage()));
+                .body(Result.error("服务器繁忙，请稍后重试"));
     }
 }
