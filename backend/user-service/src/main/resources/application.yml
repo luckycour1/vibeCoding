@@ -3,7 +3,7 @@ server:
 
 spring:
   config:
-    import: optional:nacos:
+    import: optional:nacos:${spring.application.name}.yaml
   application:
     name: user-service
   datasource:
