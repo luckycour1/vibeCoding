@@ -27,7 +27,7 @@ spring:
             - Path=/users/**
             - Method=GET,POST,PUT,DELETE
   config:
-    import: nacos:application.yaml
+    import: optional:nacos:application.yaml
 
 auth:
   ignore-urls:

@@ -16,7 +16,7 @@ spring:
         group: DEFAULT_GROUP
         namespace: ""
   config:
-    import: nacos:application.yaml
+    import: optional:nacos:application.yaml
   datasource:
     url: jdbc:mysql://localhost:3306/vibecoding?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
