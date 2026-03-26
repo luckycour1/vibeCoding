@@ -203,8 +203,7 @@ services:
 
 networks:
   spring-cloud-net:
-    name: spring-cloud-net
-    driver: bridge
+    external: true
 
 volumes:
   mysql-data:
