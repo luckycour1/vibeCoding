@@ -12,6 +12,13 @@ import { useAuthStore } from '@/store/authStore';
 import { useGlobalStore } from '@/store/globalStore';
 import { message } from 'antd';
 
+// 响应结构
+interface ResponseData<T = any> {
+  code: number;
+  message: string;
+  data: T;
+}
+
 // 创建 axios 实例
 const request: AxiosInstance = axios.create({
   baseURL: ENV.API_BASE_URL,
@@ -89,36 +96,38 @@ request.interceptors.request.use(
 
 // 响应拦截器
 request.interceptors.response.use(
-  (response: AxiosResponse) => {
+  (response: AxiosResponse<ResponseData>) => {
     removePending(response.config);
 
     // 隐藏加载状态
     const { setLoading } = useGlobalStore.getState();
     setLoading(false);
 
-    const { data } = response;
+    const res = response.data;
 
-    // 处理业务错误
-    if (data.code !== RESPONSE_CODE.SUCCESS) {
-      message.error(data.message || '请求失败');
-
-      // Token 过期处理
-      if (data.code === RESPONSE_CODE.TOKEN_EXPIRED || data.code === RESPONSE_CODE.UNAUTHORIZED) {
-        const { refreshAccessToken, logout } = useAuthStore.getState();
-        refreshAccessToken().then((success) => {
-          if (!success) {
-            logout();
-            window.location.href = '/login';
-          }
-        });
-      }
-
-      return Promise.reject(new Error(data.message));
+    // 业务成功 (code = 200)
+    if (res.code === RESPONSE_CODE.SUCCESS) {
+      return res;
     }
 
-    return data.data;
+    // 业务失败 - 显示错误消息
+    message.error(res.message || '请求失败');
+
+    // Token 过期处理
+    if (res.code === RESPONSE_CODE.TOKEN_EXPIRED || res.code === RESPONSE_CODE.UNAUTHORIZED) {
+      const { refreshAccessToken, logout } = useAuthStore.getState();
+      refreshAccessToken().then((success) => {
+        if (!success) {
+          logout();
+          window.location.href = '/login';
+        }
+      });
+    }
+
+    // 返回完整响应，让调用方能获取到 code 和 message
+    return Promise.reject(res);
   },
-  async (error: AxiosError) => {
+  async (error: AxiosError<ResponseData>) => {
     const { config } = error;
     if (config) {
       removePending(config);
