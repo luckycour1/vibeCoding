@@ -7,7 +7,7 @@ spring:
   application:
     name: user-service
   datasource:
-    url: jdbc:mysql://mysql:3306/vibecoding?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/vibecoding?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -24,11 +24,11 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.MySQL8Dialect
   redis:
-    host: redis
+    host: localhost
     port: 6379
     password: 
   kafka:
-    bootstrap-servers: kafka:29092
+    bootstrap-servers: localhost:9092
     consumer:
       group-id: user-service-group
       auto-offset-reset: earliest
@@ -40,11 +40,14 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: nacos:8848
-        namespace: dev
+        server-addr: localhost:8848
+        namespace: ""
+        group: DEFAULT_GROUP
       config:
-        server-addr: nacos:8848
+        server-addr: localhost:8848
         file-extension: yaml
+        group: DEFAULT_GROUP
+        namespace: ""
 
 jwt:
   secret: vibecoding-secret-key-for-jwt-token-generation
