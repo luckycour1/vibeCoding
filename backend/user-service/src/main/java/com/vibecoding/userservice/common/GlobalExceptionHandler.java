@@ -12,6 +12,7 @@ import java.util.Map;
 
 /**
  * 全局异常处理器
+ * HTTP 状态码始终返回 200，通过 code 字段表示业务状态
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -19,17 +20,23 @@ public class GlobalExceptionHandler {
     /**
      * 处理业务异常
      */
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<Result<Object>> handleBusinessException(BusinessException e) {
+        return ResponseEntity.ok(Result.error(e.getCode(), e.getMessage()));
+    }
+
+    /**
+     * 处理业务异常 (RuntimeException)
+     */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Result<Object>> handleRuntimeException(RuntimeException e) {
         String message = e.getMessage();
         
-        if (message.contains("用户名或密码错误") || message.contains("账号已被禁用")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Result.error(401, message));
+        if (message != null && (message.contains("用户名或密码错误") || message.contains("账号已被禁用"))) {
+            return ResponseEntity.ok(Result.error(401, message));
         }
         
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Result.error(message));
+        return ResponseEntity.ok(Result.error(400, message));
     }
 
     /**
@@ -46,18 +53,17 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
         
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new Result<>(400, "参数校验失败", errors));
+        // 合并错误信息
+        String msg = String.join("; ", errors.values());
+        return ResponseEntity.ok(Result.error(400, msg));
     }
 
     /**
-     * 处理其他异常 - 只返回通用错误提示，不暴露技术细节
+     * 处理其他异常
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Result<Object>> handleException(Exception e) {
         e.printStackTrace();
-        // 只返回通用提示，不暴露内部错误信息
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Result.error("服务器繁忙，请稍后重试"));
+        return ResponseEntity.ok(Result.error(500, "服务器繁忙，请稍后重试"));
     }
 }
