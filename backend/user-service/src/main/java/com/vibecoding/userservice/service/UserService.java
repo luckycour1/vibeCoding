@@ -27,15 +27,15 @@ public class UserService {
                 .eq(User::getUsername, request.getUsername()));
 
         if (user == null) {
-            throw new BusinessException(401, "用户名或密码错误");
+            throw new BusinessException("用户名或密码错误");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BusinessException(401, "用户名或密码错误");
+            throw new BusinessException("用户名或密码错误");
         }
 
         if (user.getStatus() == 0) {
-            throw new BusinessException(401, "账号已被禁用");
+            throw new BusinessException("账号已被禁用");
         }
 
         String token = jwtTokenProvider.generateToken(user.getUsername());

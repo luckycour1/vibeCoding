@@ -110,9 +110,6 @@ request.interceptors.response.use(
       return res.data;
     }
 
-    // 业务失败 - 显示错误消息
-    message.error(res.message || '请求失败');
-
     // Token 过期处理
     if (res.code === RESPONSE_CODE.TOKEN_EXPIRED || res.code === RESPONSE_CODE.UNAUTHORIZED) {
       const { refreshAccessToken, logout } = useAuthStore.getState();
@@ -124,7 +121,7 @@ request.interceptors.response.use(
       });
     }
 
-    // 返回完整响应，让调用方能获取到 code 和 message
+    // 业务失败 - 只reject，不弹窗，交由页面处理
     return Promise.reject(res);
   },
   async (error: AxiosError<ResponseData>) => {

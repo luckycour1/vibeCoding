@@ -55,6 +55,38 @@ frontend/
 └── commitlint.config.js      # Git 提交规范配置
 ```
 
+## 登录接口对接说明
+
+### 登录API对接后端返回200+业务code的处理
+
+后端登录接口返回格式如下：
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+{
+	"code": 400,
+	"message": "用户名或密码错误"
+}
+```
+
+前端需在登录逻辑中主动判断`result.code !== 200`，并用`message.error(result.message)`提示用户。
+
+示例代码：
+
+```ts
+const result = await authApi.login({ username, password });
+if (result.code !== 200) {
+	message.error(result.message || '用户名或密码错误');
+	return;
+}
+// 登录成功逻辑...
+```
+
+如后端改为标准REST（登录失败直接返回401/400），前端可直接用catch分支处理。
+
+---
+
 ## 运维命令
 
 ### 开发环境

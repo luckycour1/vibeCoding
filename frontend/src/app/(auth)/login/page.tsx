@@ -22,10 +22,16 @@ export default function LoginPage() {
     setLoading(true);
     try {
       // 调用后端API
-      const result: LoginResult = await authApi.login({
+      const result: any = await authApi.login({
         username: values.username,
         password: values.password
       });
+
+      // 兼容后端返回200+业务code的情况
+      if (result.code !== 200) {
+        message.error(result.message || '用户名或密码错误');
+        return;
+      }
 
       // 保存用户信息
       setUser({
@@ -38,7 +44,7 @@ export default function LoginPage() {
       // 保存Token (后端返回 token 是字符串)
       setTokens({
         token: result.token,
-        refreshToken: '',
+        refreshToken: result.refreshToken || '',
         expiresIn: result.expiresIn || 7200,
         tokenType: result.tokenType || 'Bearer'
       });
@@ -52,8 +58,10 @@ export default function LoginPage() {
       message.success('登录成功！');
       router.push('/dashboard');
     } catch (error: any) {
+      // 兜底处理网络/异常错误
+      const msg = error?.response?.data?.message || error?.message || '登录失败';
+      message.error(msg);
       console.error('登录失败:', error);
-      // 错误信息已在拦截器中显示
     } finally {
       setLoading(false);
     }

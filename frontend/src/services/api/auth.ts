@@ -95,4 +95,9 @@ export const roleApi = {
   delete: (id: number) => {
     return request.delete(`/role/delete/${id}`);
   }
+  ,
+  // 设置角色权限
+  setPermissions: (id: number, permissions: string[]) => {
+    return request.post(`/role/${id}/permissions`, { permissions });
+  }
 };

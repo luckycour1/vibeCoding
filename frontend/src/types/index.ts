@@ -43,11 +43,16 @@ export interface LoginResponse {
   token: string;
   tokenType?: string;
   expiresIn?: number;
+  refreshToken?: string;
   user: UserInfo;
 }
 
 // 前端使用
 export interface LoginResult extends LoginResponse {}
+// 可选的前端登录结果扩展（包含 refreshToken）
+export interface LoginResultWithRefresh extends LoginResult {
+  refreshToken?: string;
+}
 
 // ==================== API 响应类型 ====================
 
