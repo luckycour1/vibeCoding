@@ -1,46 +1,71 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Table, Button, Space, Tag, Modal, Form, Input, Select, 
-  Avatar, message, Popconfirm, Card, Row, Col, Statistic 
+import {
+  Table, Button, Space, Tag, Modal, Form, Input, Select,
+  Avatar, message, Popconfirm, Card, Row, Col, Statistic
 } from 'antd';
-import { 
-  UserAddOutlined, EditOutlined, DeleteOutlined, 
-  SearchOutlined, ExportOutlined, ReloadOutlined 
+import {
+  UserAddOutlined, EditOutlined, DeleteOutlined,
+  SearchOutlined, ExportOutlined, ReloadOutlined
 } from '@ant-design/icons';
-import { userApi } from '@/services/api/auth';
+import { userApi, roleApi, departmentApi } from '@/services/api/auth';
+import { useAuthStore } from '@/store/authStore';
 
 const { Option } = Select;
 
-const departments = ['技术研发部', '产品设计部', '生产制造部', '质量管理部', '市场运营部'];
-const roles = ['管理员', '产品经理', '开发工程师', '测试工程师', '审核员', '普通用户'];
-
 export default function UsersPage() {
   const [data, setData] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [searchText, setSearchText] = useState('');
   const [form] = Form.useForm();
+  const { user } = useAuthStore();
+  const userRoles = user?.roles || [];
+  const canAdd = userRoles.includes('admin') || userRoles.includes('developer');
+  const canEdit = userRoles.includes('admin') || userRoles.includes('developer');
+  const canDelete = userRoles.includes('admin');
 
   // 加载用户列表
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const result = await userApi.list();
-      const users = Array.isArray(result) ? result : [];
-      setData(users.map((u: any, index: number) => ({
-        key: u.id || String(index),
-        id: u.id,
-        name: u.nickname || u.username || '未知',
-        email: u.email || '',
-        department: u.department || '',
-        role: u.position || '普通用户',
-        status: u.status === 1 ? 'active' : 'inactive',
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`,
-        createdAt: u.createdAt || new Date().toISOString().split('T')[0],
-      })));
+      const result = await userApi.queryAll();
+      console.log('用户列表API响应:', result);
+      if (result.code === 200) {
+        const users = Array.isArray(result.data) ? result.data : [];
+        console.log('解析后的用户数组:', users);
+        const mappedUsers = users.map((u: any, index: number) => {
+          const userObj = {
+            key: u.id || String(index),
+            id: u.id,
+            // 前端显示字段
+            name: u.nickname || u.username || '未知',
+            email: u.email || '',
+            department: u.department || '',
+            role: u.position || '普通用户',
+            status: u.status === 1 ? 'active' : 'inactive',
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`,
+            createdAt: u.createdAt || new Date().toISOString().split('T')[0],
+            // 保留原始字段供编辑使用
+            username: u.username,
+            nickname: u.nickname,
+            phone: u.phone,
+            position: u.position,
+            roles: u.roles || [], // 用户角色编码数组
+            rawStatus: u.status, // 原始状态值
+          };
+          console.log(`用户 ${u.id} 映射结果:`, userObj);
+          return userObj;
+        });
+        setData(mappedUsers);
+      } else {
+        message.error(result.message || '加载用户失败');
+        setData([]);
+      }
     } catch (error: any) {
       console.error('加载用户失败:', error);
       message.error(error.message || '加载用户失败');
@@ -51,8 +76,46 @@ export default function UsersPage() {
     }
   };
 
+  // 加载部门和角色数据
+  const loadReferenceData = async () => {
+    try {
+      // 加载部门数据
+      console.log('正在加载部门数据...');
+      const deptResult = await departmentApi.enabled();
+      console.log('部门API响应:', deptResult);
+      if (deptResult.code === 200) {
+        const deptData = Array.isArray(deptResult.data) ? deptResult.data : [];
+        console.log('部门数据:', deptData);
+        setDepartments(deptData);
+      } else {
+        console.warn('部门API返回非200状态码:', deptResult.code, deptResult.message);
+        setDepartments([]);
+      }
+
+      // 加载角色数据
+      console.log('正在加载角色数据...');
+      const roleResult = await roleApi.list();
+      console.log('角色API响应:', roleResult);
+      if (roleResult.code === 200) {
+        const roleData = Array.isArray(roleResult.data) ? roleResult.data : [];
+        console.log('角色数据:', roleData);
+        setRoles(roleData);
+      } else {
+        console.warn('角色API返回非200状态码:', roleResult.code, roleResult.message);
+        setRoles([]);
+      }
+    } catch (error: any) {
+      console.error('加载参考数据失败:', error);
+      message.error('加载部门或角色数据失败');
+      // 确保设置为空数组
+      setDepartments([]);
+      setRoles([]);
+    }
+  };
+
   useEffect(() => {
     loadUsers();
+    loadReferenceData();
   }, []);
 
   const filteredData = data.filter(item => 
@@ -68,8 +131,21 @@ export default function UsersPage() {
   };
 
   const handleEdit = (record: any) => {
+    console.log('编辑用户record对象:', record);
     setEditingUser(record);
-    form.setFieldsValue(record);
+    // 映射字段：前端显示字段 -> 后端表单字段
+    const formValues = {
+      username: record.username,
+      nickname: record.nickname,
+      email: record.email,
+      phone: record.phone,
+      department: record.department,
+      position: record.position || record.role, // 优先使用原始position字段
+      roles: record.roles || [], // 用户角色编码数组
+      status: record.rawStatus || (record.status === 'active' ? 1 : 0)
+    };
+    console.log('编辑用户表单值:', formValues);
+    form.setFieldsValue(formValues);
     setModalVisible(true);
   };
 
@@ -90,7 +166,7 @@ export default function UsersPage() {
         await userApi.update(editingUser.id, values);
         message.success('更新成功');
       } else {
-        await userApi.add(values);
+        await userApi.create(values);
         message.success('添加成功');
       }
       setModalVisible(false);
@@ -129,18 +205,28 @@ export default function UsersPage() {
     },
     {
       title: '角色',
-      dataIndex: 'role',
-      key: 'role',
-      render: (role: string) => {
+      dataIndex: 'roles',
+      key: 'roles',
+      render: (roles: string[]) => {
+        if (!roles || roles.length === 0) {
+          return <Tag color="default">无角色</Tag>;
+        }
         const colorMap: Record<string, string> = {
-          '管理员': 'red',
-          '产品经理': 'purple',
-          '开发工程师': 'green',
-          '测试工程师': 'orange',
-          '审核员': 'cyan',
-          '普通用户': 'default',
+          'admin': 'red',
+          'product_manager': 'purple',
+          'developer': 'green',
+          'auditor': 'cyan',
+          'user': 'default',
         };
-        return <Tag color={colorMap[role] || 'default'}>{role}</Tag>;
+        return (
+          <>
+            {roles.map((roleCode) => (
+              <Tag key={roleCode} color={colorMap[roleCode] || 'default'} style={{ marginBottom: 4 }}>
+                {roleCode}
+              </Tag>
+            ))}
+          </>
+        );
       },
     },
     {
@@ -163,19 +249,23 @@ export default function UsersPage() {
       key: 'action',
       render: (_: any, record: any) => (
         <Space>
-          <Button 
-            type="text" 
-            icon={<EditOutlined />} 
-            onClick={() => handleEdit(record)}
-          />
-          <Popconfirm
-            title="确定要删除这个用户吗？"
-            onConfirm={() => record.id && handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="text" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          {canEdit && (
+            <Button
+              type="text"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+            />
+          )}
+          {canDelete && (
+            <Popconfirm
+              title="确定要删除这个用户吗？"
+              onConfirm={() => record.id && handleDelete(record.id)}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button type="text" danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -192,9 +282,9 @@ export default function UsersPage() {
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic 
-              title="活跃用户" 
-              value={data.filter(u => u.status === 'active').length} 
+            <Statistic
+              title="活跃用户"
+              value={data.filter(u => u.status === 'active').length}
               valueStyle={{ color: '#52c41a' }}
             />
           </Card>
@@ -223,9 +313,11 @@ export default function UsersPage() {
           />
           <Button icon={<ReloadOutlined />} onClick={loadUsers}>刷新</Button>
           <Button icon={<ExportOutlined />}>导出</Button>
-          <Button type="primary" icon={<UserAddOutlined />} onClick={handleAdd}>
-            添加用户
-          </Button>
+          {canAdd && (
+            <Button type="primary" icon={<UserAddOutlined />} onClick={handleAdd}>
+              添加用户
+            </Button>
+          )}
         </Space>
       }>
         <Table 
@@ -267,31 +359,44 @@ export default function UsersPage() {
           >
             <Input placeholder="请输入昵称" />
           </Form.Item>
-          <Form.Item 
-            name="email" 
-            label="邮箱" 
+          <Form.Item
+            name="email"
+            label="邮箱"
             rules={[
               { type: 'email', message: '请输入正确的邮箱格式' }
             ]}
           >
             <Input placeholder="请输入邮箱" />
           </Form.Item>
+          <Form.Item
+            name="phone"
+            label="手机号"
+          >
+            <Input placeholder="请输入手机号" />
+          </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="department" label="部门">
                 <Select placeholder="请选择部门">
-                  {departments.map(d => <Option key={d} value={d}>{d}</Option>)}
+                  {departments.map((d: any) => (
+                    <Option key={d.id} value={d.name}>{d.name}</Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="role" label="角色">
-                <Select placeholder="请选择角色">
-                  {roles.map(r => <Option key={r} value={r}>{r}</Option>)}
-                </Select>
+              <Form.Item name="position" label="职位">
+                <Input placeholder="请输入职位" />
               </Form.Item>
             </Col>
           </Row>
+          <Form.Item name="roles" label="角色">
+            <Select mode="multiple" placeholder="请选择角色">
+              {roles.map((r: any) => (
+                <Option key={r.id} value={r.code}>{r.name}</Option>
+              ))}
+            </Select>
+          </Form.Item>
           <Form.Item name="status" label="状态" initialValue={1}>
             <Select>
               <Option value={1}>启用</Option>

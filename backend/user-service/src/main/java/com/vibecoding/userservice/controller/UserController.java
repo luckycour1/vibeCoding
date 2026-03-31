@@ -1,52 +1,24 @@
 package com.vibecoding.userservice.controller;
 
+import com.vibecoding.comm.controller.BaseController;
 import com.vibecoding.comm.dto.Result;
-import com.vibecoding.userservice.dto.LoginRequest;
-import com.vibecoding.userservice.dto.LoginResponse;
+import com.vibecoding.userservice.dto.UserDto;
+import com.vibecoding.userservice.dto.UserQueryDto;
 import com.vibecoding.userservice.entity.User;
 import com.vibecoding.userservice.service.UserService;
-import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
-import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/user")
-@RequiredArgsConstructor
-public class UserController {
+@Slf4j
+public class UserController extends BaseController<UserDto, User, UserService, UserQueryDto> {
 
-    private final UserService userService;
-
-    @PostMapping("/login")
-    public ResponseEntity<Result<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(userService.login(request));
-    }
-
-    @GetMapping("/list")
-    public ResponseEntity<Result<List<User>>> list() {
-        return ResponseEntity.ok(Result.success(userService.findAll()));
-    }
-
-    @PostMapping("/add")
-    public ResponseEntity<Result<User>> add(@RequestBody User user) {
-        return ResponseEntity.ok(Result.success(userService.save(user)));
-    }
-
-    @PutMapping("/update/{id}")
-    public ResponseEntity<Result<User>> update(@PathVariable Long id, @RequestBody User user) {
-        return ResponseEntity.ok(Result.success(userService.update(id, user)));
-    }
-
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Result<Void>> delete(@PathVariable Long id) {
-        userService.delete(id);
-        return ResponseEntity.ok(Result.success("删除成功", null));
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Result<User>> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(Result.success(userService.findById(id)));
+    public UserController(UserService service) {
+        super(service);
     }
 }

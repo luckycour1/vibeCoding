@@ -6,47 +6,25 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-
 /**
  * 网关跨域配置
  */
 @Configuration
 public class CorsConfig {
 
-    @Bean
-    public CorsWebFilter corsWebFilter() {
-        CorsConfiguration config = new CorsConfiguration();
-        
-        // 允许所有来源（开发环境）
-        config.addAllowedOriginPattern("*");
-        
-        // 允许携带认证信息
-        config.setAllowCredentials(true);
-        
-        // 允许所有请求头
-        config.addAllowedHeader("*");
-        
-        // 允许所有请求方法
-        config.addAllowedMethod("*");
-        
-        // 暴露响应头
-        config.setExposedHeaders(Arrays.asList(
-            "Authorization",
-            "Content-Type",
-            "X-Requested-With",
-            "Accept",
-            "Origin",
-            "Access-Control-Request-Method",
-            "Access-Control-Request-Headers"
-        ));
-        
-        // 预检请求缓存时间
-        config.setMaxAge(3600L);
-        
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        
-        return new CorsWebFilter(source);
-    }
+	@Bean
+	public CorsWebFilter corsWebFilter() {
+		CorsConfiguration config = new CorsConfiguration();
+		// 允许前端所有源（开发环境）
+		config.addAllowedOriginPattern("*");
+		config.addAllowedHeader("*");
+		config.addAllowedMethod("*");
+		config.setAllowCredentials(true);
+		config.setMaxAge(3600L);
+
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/**", config);
+		return new CorsWebFilter(source);
+	}
 }
+

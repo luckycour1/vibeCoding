@@ -53,4 +53,22 @@ public class Result<T> {
     public static <T> Result<T> notFound(String message) {
         return new Result<>(404, message, null);
     }
+
+    // 兼容方法
+    public boolean isSuccess() {
+        return code == 200;
+    }
+
+    public String getMsg() {
+        return message;
+    }
+
+    // 别名方法，与参考代码一致
+    public static <T> Result<T> ok(T data) {
+        return success(data);
+    }
+
+    public static <T> Result<T> ok() {
+        return success();
+    }
 }

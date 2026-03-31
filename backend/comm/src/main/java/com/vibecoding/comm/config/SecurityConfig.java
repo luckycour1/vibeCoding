@@ -32,7 +32,7 @@ public class SecurityConfig {
             .and()
             .authorizeRequests()
                 .antMatchers("/user/login", "/user/register").permitAll()
-                .anyRequest().authenticated();
+                .anyRequest().permitAll(); // 网关已做认证，服务端全部放行
         return http.build();
     }
 }

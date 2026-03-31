@@ -170,6 +170,9 @@ services:
       - "8080:8080"
     volumes:
       - /mnt/e/workApp/all-logs/gateway:/logs
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-7200000}
     networks:
       - spring-cloud-net
     profiles: [business]
@@ -183,6 +186,9 @@ services:
       - "8081:8081"
     volumes:
       - /mnt/e/workApp/all-logs/user:/logs
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-7200000}
     networks:
       - spring-cloud-net
     profiles: [business]

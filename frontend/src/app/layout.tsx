@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import type { Metadata } from 'next';
@@ -6,6 +7,7 @@ export const metadata: Metadata = {
   title: 'Vibe Coding - AI 开发平台',
   description: 'AI 驱动的开发平台'
 };
+
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -22,7 +24,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         `}</style>
       </head>
       <body>
-        <AntdRegistry>{children}</AntdRegistry>
+        <AntdRegistry>
+          {children}
+        </AntdRegistry>
       </body>
     </html>
   );

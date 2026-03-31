@@ -8,13 +8,15 @@ import { useAuthStore } from '@/store/authStore';
 import { usePermissionStore } from '@/store/permissionStore';
 import { STORAGE_KEYS } from '@/config';
 import { storage } from '@/utils/storage';
+import { setLoginStatus } from '@/utils/auth';
 import { authApi } from '@/services/api/auth';
-import { LoginResult } from '@/types';
+import { permissionApi } from '@/services/api/auth';
+import { LoginResult, PermissionItem } from '@/types';
 
 export default function LoginPage() {
   const router = useRouter();
   const { setUser, setTokens } = useAuthStore();
-  const { setPermissions } = usePermissionStore();
+  const { setPermissions, setPermissionCodes } = usePermissionStore();
   const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(false);
 
@@ -22,45 +24,113 @@ export default function LoginPage() {
     setLoading(true);
     try {
       // 调用后端API
-      const result: any = await authApi.login({
+      const result = await authApi.login({
         username: values.username,
         password: values.password
       });
 
-      // 兼容后端返回200+业务code的情况
+      // 检查业务错误码
       if (result.code !== 200) {
-        message.error(result.message || '用户名或密码错误');
+        message.error(result.message || '登录失败');
         return;
       }
 
       // 保存用户信息
       setUser({
-        userId: result.user?.userId || 1,
-        username: result.user?.username || values.username,
-        nickname: result.user?.nickname || values.username,
-        roles: result.user?.roles || ['admin']
+        userId: result.data.userId || 1,
+        username: result.data.username || values.username,
+        nickname: result.data.nickname || values.username,
+        roles: result.data.roles || ['admin']
       });
 
-      // 保存Token (后端返回 token 是字符串)
+      // 保存Token
       setTokens({
-        token: result.token,
-        refreshToken: result.refreshToken || '',
-        expiresIn: result.expiresIn || 7200,
-        tokenType: result.tokenType || 'Bearer'
+        token: result.data.token,
+        refreshToken: result.data.refreshToken || '',
+        expiresIn: 7200,
+        tokenType: 'Bearer'
       });
+      setLoginStatus(result.data.token);
 
       // 记住我
       storage.set(STORAGE_KEYS.REMEMBER_ME, values.remember);
 
-      // 设置权限
-      setPermissions([]);
+      // 转换后端权限数据为前端格式
+      const convertPermissions = (permissions: any[]): PermissionItem[] => {
+        return permissions
+          .map(perm => ({
+            menuId: String(perm.id),
+            path: perm.path || '',
+            name: perm.name || '',
+            icon: perm.icon || '',
+            buttons: [], // 菜单权限没有按钮，按钮权限通过user/codes获取
+            children: perm.children ? convertPermissions(perm.children) : undefined
+          }));
+      };
+
+      // 获取并设置权限
+      try {
+        // 并行获取菜单权限和权限编码
+        const [menuRes, codesRes] = await Promise.all([
+          permissionApi.userMenu(),
+          permissionApi.userCodes()
+        ]);
+
+        let finalPermissions: PermissionItem[] = [];
+        let hasMenuPermissions = false;
+        let hasPermissionCodes = false;
+        let permissionCodes: string[] = [];
+
+        // 处理菜单权限
+        if (menuRes.code === 200 && menuRes.data && menuRes.data.length > 0) {
+          // 转换后端权限数据为前端格式
+          const convertedPermissions = convertPermissions(menuRes.data);
+          finalPermissions = convertedPermissions;
+          hasMenuPermissions = true;
+          console.log('获取到菜单权限:', menuRes.data.length, '项');
+        } else if (menuRes.code !== 200) {
+          console.error('获取菜单权限失败:', menuRes.message);
+        }
+
+        // 处理权限编码
+        if (codesRes.code === 200 && codesRes.data && codesRes.data.length > 0) {
+          setPermissionCodes(codesRes.data);
+          permissionCodes = codesRes.data;
+          hasPermissionCodes = true;
+          console.log('权限编码已存储:', codesRes.data.length, '项');
+        } else if (codesRes.code !== 200) {
+          console.error('获取权限编码失败:', codesRes.message);
+        }
+
+        // 判断权限是否为空：既没有菜单权限也没有权限编码
+        const isEmptyPermissions = !hasMenuPermissions && !hasPermissionCodes;
+
+        if (isEmptyPermissions) {
+          // 权限为空，只显示首页和仪表盘
+          console.log('权限为空，生成默认菜单（首页和仪表盘）');
+          finalPermissions = generateDefaultMenu();
+        } else if (!hasMenuPermissions && hasPermissionCodes) {
+          // 有权限编码但没有菜单权限，根据权限编码生成菜单
+          console.log('有权限编码但无菜单权限，根据权限编码生成菜单');
+          finalPermissions = generateMenuFromCodes(permissionCodes);
+        }
+        // 如果有菜单权限，已经使用菜单权限（无需额外处理）
+
+        // 设置最终的权限数据
+        if (finalPermissions.length > 0) {
+          setPermissions(finalPermissions);
+          console.log('设置权限菜单:', finalPermissions.length, '项');
+        } else {
+          console.warn('没有设置任何权限菜单');
+        }
+      } catch (error) {
+        console.error('获取权限失败:', error);
+      }
 
       message.success('登录成功！');
       router.push('/dashboard');
     } catch (error: any) {
-      // 兜底处理网络/异常错误
-      const msg = error?.response?.data?.message || error?.message || '登录失败';
-      message.error(msg);
+      // 错误已在拦截器中处理，这里只记录日志
       console.error('登录失败:', error);
     } finally {
       setLoading(false);
@@ -239,3 +309,85 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
   },
 };
+
+// 编码到菜单项的映射（用于当后端菜单为空时生成默认菜单）
+const codeToMenuItem: Record<string, { path: string; name: string; icon?: string }> = {
+  dashboard: { path: '/dashboard/dashboard', name: '仪表盘', icon: 'DashboardOutlined' },
+  user: { path: '/dashboard/users', name: '用户管理', icon: 'UserOutlined' },
+  role: { path: '/dashboard/roles', name: '角色管理', icon: 'SafetyCertificateOutlined' },
+  department: { path: '/dashboard/departments', name: '部门管理', icon: 'TeamOutlined' },
+  settings: { path: '/dashboard/settings', name: '系统设置', icon: 'SettingOutlined' },
+  system: { path: '/dashboard/system', name: '系统管理', icon: 'SettingOutlined' },
+  home: { path: '/dashboard', name: '首页', icon: 'HomeOutlined' },
+  'user-management': { path: '/dashboard/users', name: '用户管理', icon: 'UserOutlined' },
+};
+
+/**
+ * 根据权限编码数组生成菜单权限项
+ */
+function generateMenuFromCodes(codes: string[]): PermissionItem[] {
+  const menuItems: PermissionItem[] = [];
+  const processed = new Set<string>();
+
+  codes.forEach(code => {
+    // 跳过按钮权限（包含冒号）
+    if (code.includes(':')) return;
+
+    // 如果已经有映射项，使用映射项
+    if (codeToMenuItem[code]) {
+      const item = codeToMenuItem[code];
+      // 避免重复添加相同路径的菜单
+      if (!processed.has(item.path)) {
+        menuItems.push({
+          menuId: `generated-${code}`,
+          path: item.path,
+          name: item.name,
+          icon: item.icon || '',
+          buttons: [],
+          children: undefined
+        });
+        processed.add(item.path);
+      }
+    } else {
+      // 默认生成：路径为 /dashboard/{code}，名称为 code
+      const path = `/dashboard/${code.toLowerCase()}`;
+      if (!processed.has(path)) {
+        menuItems.push({
+          menuId: `generated-${code}`,
+          path,
+          name: code,
+          icon: '',
+          buttons: [],
+          children: undefined
+        });
+        processed.add(path);
+      }
+    }
+  });
+
+  return menuItems;
+}
+
+/**
+ * 生成默认菜单（当权限为空时）：只显示首页和仪表盘
+ */
+function generateDefaultMenu(): PermissionItem[] {
+  return [
+    {
+      menuId: 'default-home',
+      path: '/dashboard',
+      name: '首页',
+      icon: 'HomeOutlined',
+      buttons: [],
+      children: undefined
+    },
+    {
+      menuId: 'default-dashboard',
+      path: '/dashboard/dashboard',
+      name: '仪表盘',
+      icon: 'DashboardOutlined',
+      buttons: [],
+      children: undefined
+    }
+  ];
+}

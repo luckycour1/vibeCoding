@@ -44,10 +44,21 @@ export interface LoginResponse {
   tokenType?: string;
   expiresIn?: number;
   refreshToken?: string;
-  user: UserInfo;
+  userId?: number | string;
+  username?: string;
+  nickname?: string;
+  roles?: string[];
+  user?: UserInfo; // 可选，向后兼容
 }
 
-// 前端使用
+// 前端使用（实际API响应）
+export interface LoginApiResponse {
+  code: number;
+  data: LoginResponse;
+  message: string;
+}
+
+// 向后兼容的别名
 export interface LoginResult extends LoginResponse {}
 // 可选的前端登录结果扩展（包含 refreshToken）
 export interface LoginResultWithRefresh extends LoginResult {
@@ -80,6 +91,7 @@ export interface PageResult<T> {
 // ==================== 路由相关类型 ====================
 
 export interface RouteItem {
+  id?: number | string;
   path: string;
   name: string;
   icon?: string;

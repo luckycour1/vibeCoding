@@ -10,20 +10,21 @@ spring:
       discovery:
         locator:
           enabled: false
-      # 默认过滤器 - 设置响应头
-      # default-filters:
-      #   - AddRequestHeader=X-Forwarded-For, ${remoteAddr}
+      # 不要设置 default-filters、AddResponseHeader、CORS 相关配置，全部交给 CorsConfig.java 统一处理
       routes:
         - id: user-service
-          uri: http://localhost:8081
+          uri: http://127.0.0.1:8081  # Docker容器内使用服务名，宿主机开发可改为 localhost:8081
           predicates:
-            - Path=/api/user/**
+            - Path=/api/user/**,/api/role/**,/api/department/**,/api/permission/**
           filters:
             - StripPrefix=1
-      # 路由失败时返回JSON错误
       httpclient:
         connect-timeout: 5000
         response-timeout: 10000
+# JWT配置
+jwt:
+  secret: vibecoding-secret-key-for-jwt-token-generation
+  expiration: 7200000
 
 # 自定义错误响应
 spring.codec:

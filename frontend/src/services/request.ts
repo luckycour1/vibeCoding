@@ -5,12 +5,11 @@ import axios, {
   AxiosError,
   InternalAxiosRequestConfig
 } from 'axios';
-import { ENV, RESPONSE_CODE, WHITE_LIST } from '@/config';
-import { storage } from '@/utils/storage';
-import { STORAGE_KEYS } from '@/config';
-import { useAuthStore } from '@/store/authStore';
-import { useGlobalStore } from '@/store/globalStore';
+import { ENV, RESPONSE_CODE } from '@/config';
+import { getToken, clearLoginStatus } from '@/utils/auth';
 import { message } from 'antd';
+import { useGlobalStore } from '@/store/globalStore';
+import { useAuthStore } from '@/store/authStore';
 
 // 响应结构
 interface ResponseData<T = any> {
@@ -39,6 +38,18 @@ function getRequestKey(config: AxiosRequestConfig): string {
 }
 
 /**
+ * 取消重复请求
+ */
+function cancelPending(config: AxiosRequestConfig): void {
+  const key = getRequestKey(config);
+  if (pendingMap.has(key)) {
+    const controller = pendingMap.get(key);
+    controller?.abort();
+    pendingMap.delete(key);
+  }
+}
+
+/**
  * 添加请求到队列
  */
 function addPending(config: AxiosRequestConfig): void {
@@ -53,21 +64,7 @@ function addPending(config: AxiosRequestConfig): void {
  */
 function removePending(config: AxiosRequestConfig): void {
   const key = getRequestKey(config);
-  if (pendingMap.has(key)) {
-    pendingMap.delete(key);
-  }
-}
-
-/**
- * 取消重复请求
- */
-function cancelPending(config: AxiosRequestConfig): void {
-  const key = getRequestKey(config);
-  if (pendingMap.has(key)) {
-    const controller = pendingMap.get(key);
-    controller?.abort();
-    pendingMap.delete(key);
-  }
+  pendingMap.delete(key);
 }
 
 // 请求拦截器
@@ -78,7 +75,7 @@ request.interceptors.request.use(
     addPending(config);
 
     // 添加 Token
-    const token = storage.get<string>(STORAGE_KEYS.ACCESS_TOKEN);
+    const token = getToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -96,35 +93,31 @@ request.interceptors.request.use(
 
 // 响应拦截器
 request.interceptors.response.use(
-  (response: AxiosResponse<ResponseData>) => {
+  (response: AxiosResponse) => {
     removePending(response.config);
 
     // 隐藏加载状态
     const { setLoading } = useGlobalStore.getState();
     setLoading(false);
 
-    const res = response.data;
+    const res = response.data as ResponseData;
 
-    // 业务成功 (code = 200)
-    if (res.code === RESPONSE_CODE.SUCCESS) {
-      return res.data;
+    // 处理业务错误
+    if (res.code !== RESPONSE_CODE.SUCCESS) {
+      // Token 过期或无效
+      if (res.code === RESPONSE_CODE.TOKEN_EXPIRED || res.code === RESPONSE_CODE.UNAUTHORIZED) {
+        message.error('登录已过期，请重新登录');
+        clearLoginStatus();
+        window.location.href = '/login';
+      } else {
+        message.error(res.message || '请求失败');
+      }
+      throw new Error(res.message || '请求失败');
     }
 
-    // Token 过期处理
-    if (res.code === RESPONSE_CODE.TOKEN_EXPIRED || res.code === RESPONSE_CODE.UNAUTHORIZED) {
-      const { refreshAccessToken, logout } = useAuthStore.getState();
-      refreshAccessToken().then((success) => {
-        if (!success) {
-          logout();
-          window.location.href = '/login';
-        }
-      });
-    }
-
-    // 业务失败 - 只reject，不弹窗，交由页面处理
-    return Promise.reject(res);
+    return res as any;
   },
-  async (error: AxiosError<ResponseData>) => {
+  (error: AxiosError<ResponseData>) => {
     const { config } = error;
     if (config) {
       removePending(config);
@@ -141,7 +134,7 @@ request.interceptors.response.use(
       switch (status) {
         case RESPONSE_CODE.UNAUTHORIZED:
           message.error('登录已过期，请重新登录');
-          useAuthStore.getState().logout();
+          clearLoginStatus();
           window.location.href = '/login';
           break;
         case RESPONSE_CODE.FORBIDDEN:
@@ -149,9 +142,6 @@ request.interceptors.response.use(
           break;
         case RESPONSE_CODE.NOT_FOUND:
           message.error('请求的资源不存在');
-          break;
-        case RESPONSE_CODE.ERROR:
-          message.error('服务器内部错误');
           break;
         default:
           message.error(`请求失败: ${status}`);

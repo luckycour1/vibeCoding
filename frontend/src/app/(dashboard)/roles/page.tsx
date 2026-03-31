@@ -9,64 +9,41 @@ import {
   PlusOutlined, EditOutlined, DeleteOutlined, 
   SafetyCertificateOutlined, KeyOutlined, SettingOutlined, ReloadOutlined
 } from '@ant-design/icons';
-import { roleApi } from '@/services/api/auth';
+import { roleApi, userApi, permissionApi } from '@/services/api/auth';
 
 const { Option } = Select;
 
-const permissionTreeData = [
-  {
-    title: '用户管理',
-    key: 'user',
-    children: [
-      { title: '查看用户', key: 'user:view' },
-      { title: '编辑用户', key: 'user:edit' },
-      { title: '删除用户', key: 'user:delete' },
-    ],
-  },
-  {
-    title: '订单管理',
-    key: 'order',
-    children: [
-      { title: '查看订单', key: 'order:view' },
-      { title: '编辑订单', key: 'order:edit' },
-      { title: '审核订单', key: 'order:audit' },
-    ],
-  },
-  {
-    title: '产品管理',
-    key: 'product',
-    children: [
-      { title: '查看产品', key: 'product:view' },
-      { title: '编辑产品', key: 'product:edit' },
-      { title: '删除产品', key: 'product:delete' },
-    ],
-  },
-  {
-    title: '系统设置',
-    key: 'system',
-    children: [
-      { title: '角色管理', key: 'system:role' },
-      { title: '权限配置', key: 'system:permission' },
-      { title: '日志查看', key: 'system:log' },
-    ],
-  },
-];
 
 export default function RolesPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [userCount, setUserCount] = useState<number>(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [permModalVisible, setPermModalVisible] = useState(false);
   const [editingRole, setEditingRole] = useState<any>(null);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [form] = Form.useForm();
+  const [searchText, setSearchText] = useState('');
+  const [permissionTreeData, setPermissionTreeData] = useState<any[]>([]);
+  const [permissionCount, setPermissionCount] = useState<number>(0);
 
   // 加载角色列表
   const loadRoles = async () => {
     setLoading(true);
     try {
+      console.log('正在加载角色列表...');
       const result = await roleApi.list();
-      const roles = Array.isArray(result) ? result : [];
+      console.log('角色列表API响应:', result);
+
+      if (result.code !== 200) {
+        message.error(result.message || '加载角色失败');
+        setData([]);
+        return;
+      }
+
+      const roles = Array.isArray(result.data) ? result.data : [];
+      console.log('角色数据:', roles);
+
       setData(roles.map((r: any, index: number) => ({
         key: r.id || String(index),
         id: r.id,
@@ -86,8 +63,75 @@ export default function RolesPage() {
     }
   };
 
+  const loadUserCount = async () => {
+    try {
+      console.log('正在加载用户总数...');
+      const result = await roleApi.userCount();
+      console.log('用户总数API响应:', result);
+
+      if (result.code === 200) {
+        setUserCount(result.data || 0);
+      } else {
+        console.warn('用户总数API返回非200状态码:', result.code, result.message);
+        setUserCount(0);
+      }
+    } catch (error: any) {
+      console.error('加载用户总数失败:', error);
+      setUserCount(0);
+    }
+  };
+
+  // 加载权限树
+  const loadPermissionTree = async () => {
+    try {
+      console.log('正在加载权限树...');
+      const result = await permissionApi.tree();
+      console.log('权限树API响应:', result);
+
+      if (result.code === 200) {
+        // 转换后端权限数据为Tree组件格式
+        const convert = (permissions: any[]): any[] => {
+          return permissions.map(perm => ({
+            title: perm.name,
+            key: String(perm.id), // 使用id作为key
+            children: perm.children ? convert(perm.children) : undefined
+          }));
+        };
+        const treeData = convert(result.data);
+        console.log('转换后的权限树数据:', treeData);
+        setPermissionTreeData(treeData);
+
+        // 计算叶子节点数量（权限节点数）
+        const countLeafNodes = (nodes: any[]): number => {
+          let count = 0;
+          nodes.forEach(node => {
+            if (node.children && node.children.length > 0) {
+              count += countLeafNodes(node.children);
+            } else {
+              count++;
+            }
+          });
+          return count;
+        };
+        const leafCount = countLeafNodes(treeData);
+        console.log('权限叶子节点数量:', leafCount);
+        setPermissionCount(leafCount);
+      } else {
+        console.warn('权限树API返回非200状态码:', result.code, result.message);
+        setPermissionTreeData([]);
+        setPermissionCount(0);
+      }
+    } catch (error: any) {
+      console.error('加载权限树失败:', error);
+      setPermissionTreeData([]);
+      setPermissionCount(0);
+    }
+  };
+
   useEffect(() => {
     loadRoles();
+    loadUserCount();
+    loadPermissionTree();
   }, []);
 
   const handleAdd = () => {
@@ -105,9 +149,24 @@ export default function RolesPage() {
 
   const handlePermission = (record: any) => {
     setEditingRole(record);
-    setSelectedPermissions(record.permissions?.includes('*') 
-      ? permissionTreeData.flatMap(t => t.children?.map(c => c.key) || [])
-      : record.permissions || []);
+    // 如果权限包含'*'，选择所有权限（递归获取所有叶子节点的key）
+    if (record.permissions?.includes('*')) {
+      const getAllLeafKeys = (tree: any[]): string[] => {
+        let keys: string[] = [];
+        tree.forEach(node => {
+          if (node.children && node.children.length > 0) {
+            keys.push(...getAllLeafKeys(node.children));
+          } else {
+            keys.push(node.key);
+          }
+        });
+        return keys;
+      };
+      setSelectedPermissions(getAllLeafKeys(permissionTreeData));
+    } else {
+      // 假设record.permissions是权限ID数组（数字），转换为字符串
+      setSelectedPermissions((record.permissions || []).map((p: any) => String(p)));
+    }
     setPermModalVisible(true);
   };
 
@@ -128,7 +187,7 @@ export default function RolesPage() {
         await roleApi.update(editingRole.id, values);
         message.success('更新成功');
       } else {
-        await roleApi.add(values);
+        await roleApi.create(values);
         message.success('添加成功');
       }
       setModalVisible(false);
@@ -142,7 +201,9 @@ export default function RolesPage() {
   const handlePermSubmit = async () => {
     try {
       if (editingRole?.id) {
-        await roleApi.setPermissions(editingRole.id, selectedPermissions);
+        // 将字符串key转换为数字ID
+        const permissionIds = selectedPermissions.map(p => Number(p));
+        await permissionApi.saveRolePermissions(editingRole.id, permissionIds);
         message.success('权限配置已更新');
       }
       setPermModalVisible(false);
@@ -207,6 +268,12 @@ export default function RolesPage() {
     },
   ];
 
+  const filteredData = data.filter(item =>
+    item.name?.toLowerCase().includes(searchText.toLowerCase()) ||
+    item.code?.toLowerCase().includes(searchText.toLowerCase()) ||
+    item.description?.toLowerCase().includes(searchText.toLowerCase())
+  );
+
   return (
     <div style={styles.container}>
       <Row gutter={16} style={{ marginBottom: 24 }}>
@@ -222,25 +289,31 @@ export default function RolesPage() {
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic title="权限节点" value={12} prefix={<KeyOutlined />} />
+            <Statistic title="权限节点" value={permissionCount} prefix={<KeyOutlined />} />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic title="用户总数" value={22} prefix={<SafetyCertificateOutlined />} />
+            <Statistic title="用户总数" value={userCount} prefix={<SafetyCertificateOutlined />} />
           </Card>
         </Col>
       </Row>
 
       <Card title="角色列表" extra={
         <Space>
+          <Input.Search
+            placeholder="搜索角色名称、编码、描述"
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+            style={{ width: 200 }}
+          />
           <Button icon={<ReloadOutlined />} onClick={loadRoles}>刷新</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
             添加角色
           </Button>
         </Space>
       }>
-        <Table columns={columns} dataSource={data} loading={loading} pagination={false} />
+        <Table columns={columns} dataSource={filteredData} loading={loading} pagination={false} />
       </Card>
 
       <Modal
@@ -281,7 +354,11 @@ export default function RolesPage() {
           defaultExpandAll
           treeData={permissionTreeData}
           checkedKeys={selectedPermissions}
-          onCheck={(keys: any) => setSelectedPermissions(keys)}
+          onCheck={(checkedKeys: any) => {
+            // Tree组件的onCheck返回{checked: [], halfChecked: []}或数组
+            const keys = Array.isArray(checkedKeys) ? checkedKeys : checkedKeys.checked;
+            setSelectedPermissions(keys || []);
+          }}
         />
       </Modal>
     </div>

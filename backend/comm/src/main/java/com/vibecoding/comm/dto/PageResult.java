@@ -8,7 +8,11 @@ import java.util.List;
 /**
  * 分页响应
  */
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
 @Data
+@EqualsAndHashCode(callSuper=false)
 public class PageResult<T> extends Result<List<T>> {
     private PageDto pageInfo;
 
@@ -44,5 +48,10 @@ public class PageResult<T> extends Result<List<T>> {
         result.setMessage(message);
         result.setData(null);
         return result;
+    }
+
+    // 别名方法，与参考代码一致
+    public static <T> PageResult<T> From(com.baomidou.mybatisplus.extension.plugins.pagination.Page<T> page) {
+        return ok(page);
     }
 }

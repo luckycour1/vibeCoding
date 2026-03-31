@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(git clone:*)",
+      "Bash(npm run:*)",
+      "Bash(mvn -v)",
+      "Bash(mvn clean:*)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :8080)",
+      "Bash(tasklist)",
+      "Bash(findstr java:*)",
+      "Bash(ls:*)",
+      "Bash(mysql:*)",
+      "Bash(docker ps:*)",
+      "Bash(cd:*)",
+      "Bash(find:*)"
+    ]
+  }
+}
